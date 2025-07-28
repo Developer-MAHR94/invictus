@@ -427,6 +427,11 @@ export default function PerfilAdmin() {
       </div>
       <div style={{ background: 'var(--color-gris-claro)', padding: 24, borderRadius: 10, marginBottom: 32, color: 'black' }}>
         <h3>Gestión de barberos</h3>
+        {error && (
+          <div style={{ color: 'red', fontWeight: 'bold', marginBottom: 12 }}>
+            {error}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
           <input type="text" placeholder="Nombre" value={nombreBarbero} onChange={e => setNombreBarbero(e.target.value)} style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', minWidth: 120 }} />
           <input type="text" placeholder="Apellido" value={apellidoBarbero} onChange={e => setApellidoBarbero(e.target.value)} style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', minWidth: 120 }} />
