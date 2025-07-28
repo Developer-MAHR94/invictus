@@ -1,66 +1,36 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
-function loadUsuarios() {
-  try {
-    const data = localStorage.getItem('usuarios');
-    return data ? JSON.parse(data) : [
-      { usuario: 'luis.paez', clave: '1234', rol: 'admin' },
-      { usuario: 'natali.gomez', clave: '1002158638', rol: 'asistente' },
-      { usuario: 'jose.torres', clave: '1044215117', rol: 'barbero' },
-      { usuario: 'breiner.ferrer', clave: '1002185092', rol: 'barbero' },
-      { usuario: 'edinson.vergara', clave: '1001914098', rol: 'barbero' },
-    ];
-  } catch {
-    return [];
-  }
-}
-
-function ensureUsuariosBase() {
-  const base = [
-    { usuario: 'luis.paez', clave: '1234', rol: 'admin', nombre: 'Luis', apellido: 'Paez' },
-    { usuario: 'natali.gomez', clave: '1002158638', rol: 'asistente', nombre: 'Nataly', apellido: 'Gomez' },
-    { usuario: 'jose.torres', clave: '1044215117', rol: 'barbero', nombre: 'José', apellido: 'Torres' },
-    { usuario: 'breiner.ferrer', clave: '1002185092', rol: 'barbero', nombre: 'Breiner', apellido: 'Ferrer' },
-    { usuario: 'edinson.vergara', clave: '1001914098', rol: 'barbero', nombre: 'Edinson', apellido: 'Vergara' },
-  ];
-  let usuarios: Array<{usuario: string; clave: string; rol: string; nombre?: string; apellido?: string}> = [];
-  try {
-    const data = localStorage.getItem('usuarios');
-    usuarios = data ? JSON.parse(data) : [];
-  } catch { usuarios = []; }
-  let changed = false;
-  base.forEach((u: {usuario: string; clave: string; rol: string; nombre: string; apellido: string}) => {
-    if (!usuarios.some((us: {usuario: string}) => us.usuario === u.usuario)) {
-      usuarios.push(u);
-      changed = true;
-    }
-  });
-  if (changed) localStorage.setItem('usuarios', JSON.stringify(usuarios));
-}
+import { usuarioService } from '../services/supabaseService';
 
 export default function Login() {
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  // Este useEffect solo debe ejecutarse una vez al montar el componente para inicializar los usuarios base
-  React.useEffect(() => { ensureUsuariosBase(); }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const usuarios = loadUsuarios();
-    const user = usuarios.find((u: {usuario: string; clave: string; rol: string}) => u.usuario === usuario && u.clave === clave);
-    if (user) {
-      login(user.usuario, user.rol);
-      if (user.rol === 'admin') navigate('/perfil-admin');
-      else if (user.rol === 'asistente') navigate('/dashboard');
-      else if (user.rol === 'barbero') navigate('/perfil-barbero');
-    } else {
-      setError('Usuario o clave incorrectos');
+    setLoading(true);
+    setError('');
+    
+    try {
+      const user = await usuarioService.login(usuario, clave);
+      if (user) {
+        login(user.usuario, user.rol);
+        if (user.rol === 'admin') navigate('/perfil-admin');
+        else if (user.rol === 'asistente') navigate('/dashboard');
+        else if (user.rol === 'barbero') navigate('/perfil-barbero');
+      } else {
+        setError('Usuario o clave incorrectos');
+      }
+    } catch (err) {
+      console.error('Error en login:', err);
+      setError('Error de conexión. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,8 +59,21 @@ export default function Login() {
           />
         </div>
         {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
-        <button type="submit" style={{ width: '100%', padding: 10, background: 'var(--color-marron-oscuro)', color: 'white', border: 'none', borderRadius: 6, fontWeight: 'bold' }}>
-          Ingresar
+        <button 
+          type="submit" 
+          disabled={loading}
+          style={{ 
+            width: '100%', 
+            padding: 10, 
+            background: loading ? '#ccc' : 'var(--color-marron-oscuro)', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: 6, 
+            fontWeight: 'bold',
+            cursor: loading ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {loading ? 'Conectando...' : 'Ingresar'}
         </button>
       </form>
     </div>

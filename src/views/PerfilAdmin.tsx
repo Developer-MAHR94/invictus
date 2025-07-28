@@ -1,85 +1,74 @@
 import { useState, useEffect } from 'react';
 import { useAppData } from '../context/AppDataContext';
-
-const BARBEROS_KEY = 'barberos';
-const barberosBase = [
-  'jose.torres',
-  'breiner.ferrer',
-  'edinson.vergara',
-];
-
-function loadBarberos() {
-  try {
-    const data = localStorage.getItem(BARBEROS_KEY);
-    return data ? JSON.parse(data) : barberosBase;
-  } catch {
-    return barberosBase;
-  }
-}
-function saveBarberos(barberos: string[]) {
-  localStorage.setItem(BARBEROS_KEY, JSON.stringify(barberos));
-}
-
-function loadUsuarios() {
-  try {
-    const data = localStorage.getItem('usuarios');
-    return data ? JSON.parse(data) : [
-      { usuario: 'luis.paez', clave: '1234', rol: 'admin' },
-      { usuario: 'natali.gomez', clave: '1002158638', rol: 'asistente' },
-      { usuario: 'jose.torres', clave: '1044215117', rol: 'barbero' },
-      { usuario: 'breiner.ferrer', clave: '1002185092', rol: 'barbero' },
-      { usuario: 'edinson.vergara', clave: '1001914098', rol: 'barbero' },
-    ];
-  } catch {
-    return [];
-  }
-}
-function saveUsuarios(usuarios: Array<{usuario: string; clave: string; rol: string; nombre?: string; apellido?: string}>) {
-  localStorage.setItem('usuarios', JSON.stringify(usuarios));
-}
-
-function loadPropinasPendientes() {
-  try {
-    const data = localStorage.getItem('propinasPendientes');
-    return data ? JSON.parse(data) : {};
-  } catch {
-    return {};
-  }
-}
-function savePropinasPendientes(obj: {[barbero: string]: number}) {
-  localStorage.setItem('propinasPendientes', JSON.stringify(obj));
-}
-function loadHistorialPropinas() {
-  try {
-    const data = localStorage.getItem('historialPropinas');
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-function saveHistorialPropinas(arr: Array<{barbero: string; monto: number; fecha: string}>) {
-  localStorage.setItem('historialPropinas', JSON.stringify(arr));
-}
+import { usuarioService, barberoService, propinaService } from '../services/supabaseService';
 
 export default function PerfilAdmin() {
   const { facturas } = useAppData();
-  const [barberos, setBarberos] = useState<string[]>(() => loadBarberos());
+  const [barberos, setBarberos] = useState<string[]>([]);
   const [nuevoBarbero, setNuevoBarbero] = useState('');
   const [claveBarbero, setClaveBarbero] = useState('');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // @ts-ignore
   const [error, setError] = useState('');
-  const [usuarios, setUsuarios] = useState<Array<{usuario: string; clave: string; rol: string; nombre?: string; apellido?: string}>>(() => loadUsuarios());
-  const [propinasPendientes, setPropinasPendientes] = useState<{[barbero: string]: number}>(() => loadPropinasPendientes());
-  const [historialPropinas, setHistorialPropinas] = useState<Array<{barbero: string; monto: number; fecha: string}>>(() => loadHistorialPropinas());
+  const [usuarios, setUsuarios] = useState<Array<{usuario: string; clave: string; rol: string; nombre?: string; apellido?: string}>>([]);
+  const [propinasPendientes, setPropinasPendientes] = useState<{[barbero: string]: number}>({});
+  const [historialPropinas, setHistorialPropinas] = useState<Array<{barbero: string; monto: number; fecha: string}>>([]);
   const [montoEntrega, setMontoEntrega] = useState<{ [barbero: string]: string }>({});
   const [nombreBarbero, setNombreBarbero] = useState('');
   const [apellidoBarbero, setApellidoBarbero] = useState('');
+  
+  // Estados para cambio de contraseña
+  const [mostrarCambioClave, setMostrarCambioClave] = useState(false);
+  const [claveActual, setClaveActual] = useState('');
+  const [nuevaClave, setNuevaClave] = useState('');
+  const [confirmarClave, setConfirmarClave] = useState('');
+  const [mensajeClave, setMensajeClave] = useState('');
 
-  useEffect(() => { saveBarberos(barberos); }, [barberos]);
-  useEffect(() => { saveUsuarios(usuarios); }, [usuarios]);
-  useEffect(() => { savePropinasPendientes(propinasPendientes); }, [propinasPendientes]);
-  useEffect(() => { saveHistorialPropinas(historialPropinas); }, [historialPropinas]);
+  // Cargar datos desde Supabase
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [usuariosData, barberosData, propinasData] = await Promise.all([
+          usuarioService.getUsuarios(),
+          barberoService.getBarberos(),
+          propinaService.getPropinas()
+        ]);
+        
+        // Mapear usuarios de Supabase al formato de la app
+        const usuariosMapeados = usuariosData.map(u => ({
+          usuario: u.usuario,
+          clave: u.clave,
+          rol: u.rol,
+          nombre: u.nombre || undefined,
+          apellido: u.apellido || undefined
+        }));
+        
+        setUsuarios(usuariosMapeados);
+        setBarberos(barberosData.map(b => b.usuario));
+        
+        // Calcular propinas pendientes
+        const propinasPendientesCalc: {[barbero: string]: number} = {};
+        const historial: Array<{barbero: string; monto: number; fecha: string}> = [];
+        
+        propinasData.forEach(propina => {
+          if (!propina.entregada) {
+            propinasPendientesCalc[propina.barbero] = (propinasPendientesCalc[propina.barbero] || 0) + propina.monto;
+          } else {
+            historial.push({
+              barbero: propina.barbero,
+              monto: propina.monto,
+              fecha: propina.fecha
+            });
+          }
+        });
+        
+        setPropinasPendientes(propinasPendientesCalc);
+        setHistorialPropinas(historial);
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      }
+    };
+    
+    loadData();
+  }, []);
   useEffect(() => {
     // Asegura que admin y asistente tengan nombre y apellido correctos
     setUsuarios(prev => {
@@ -150,7 +139,7 @@ export default function PerfilAdmin() {
   }, [facturasCerradas, barberos, historialPropinas, propinasPendientes]);
 
   // Agregar barbero
-  const handleAgregarBarbero = () => {
+  const handleAgregarBarbero = async () => {
     if (!nombreBarbero || !apellidoBarbero || !nuevoBarbero || !claveBarbero) {
       setError('Debes ingresar nombre, apellido, usuario y clave del barbero');
       return;
@@ -163,25 +152,76 @@ export default function PerfilAdmin() {
       setError('Ese usuario ya existe');
       return;
     }
-    setBarberos(prev => [...prev, nuevoBarbero]);
-    setUsuarios(prev => [...prev, { usuario: nuevoBarbero, clave: claveBarbero, rol: 'barbero', nombre: nombreBarbero, apellido: apellidoBarbero }]);
-    setNuevoBarbero('');
-    setClaveBarbero('');
-    setNombreBarbero('');
-    setApellidoBarbero('');
-    setError('');
+    
+    try {
+      // Crear usuario en Supabase
+      const nuevoUsuario = await usuarioService.crearUsuario({
+        usuario: nuevoBarbero,
+        clave: claveBarbero,
+        rol: 'barbero',
+        nombre: nombreBarbero,
+        apellido: apellidoBarbero
+      });
+      
+      // Crear barbero en Supabase
+      const nuevoBarberoData = await barberoService.crearBarbero({
+        usuario: nuevoBarbero,
+        nombre: nombreBarbero,
+        apellido: apellidoBarbero
+      });
+      
+      if (nuevoUsuario && nuevoBarberoData) {
+        setBarberos(prev => [...prev, nuevoBarbero]);
+        setUsuarios(prev => [...prev, { 
+          usuario: nuevoBarbero, 
+          clave: claveBarbero, 
+          rol: 'barbero', 
+          nombre: nombreBarbero, 
+          apellido: apellidoBarbero 
+        }]);
+        setNuevoBarbero('');
+        setClaveBarbero('');
+        setNombreBarbero('');
+        setApellidoBarbero('');
+        setError('');
+      } else {
+        setError('Error al crear el barbero');
+      }
+    } catch (error) {
+      console.error('Error agregando barbero:', error);
+      setError('Error de conexión. Intenta de nuevo.');
+    }
   };
 
   // Eliminar barbero (solo si no tiene cortes activos)
-  const handleEliminarBarbero = (b: string) => {
+  const handleEliminarBarbero = async (b: string) => {
     const tieneCortes = facturasCerradas.some(f => f.servicios.some(s => s.barbero === b));
     if (tieneCortes) {
       setError('No se puede eliminar un barbero con servicios registrados');
       return;
     }
-    setBarberos(prev => prev.filter(barb => barb !== b));
-    setUsuarios(prev => prev.filter(u => u.usuario !== b));
-    setError('');
+    
+    try {
+      // Obtener el ID del barbero para eliminarlo
+      const barberosData = await barberoService.getBarberos();
+      const barberoAEliminar = barberosData.find(barbero => barbero.usuario === b);
+      
+      if (barberoAEliminar) {
+        const eliminado = await barberoService.eliminarBarbero(barberoAEliminar.id);
+        if (eliminado) {
+          setBarberos(prev => prev.filter(barb => barb !== b));
+          setUsuarios(prev => prev.filter(u => u.usuario !== b));
+          setError('');
+        } else {
+          setError('Error al eliminar el barbero');
+        }
+      } else {
+        setError('Barbero no encontrado');
+      }
+    } catch (error) {
+      console.error('Error eliminando barbero:', error);
+      setError('Error de conexión. Intenta de nuevo.');
+    }
   };
 
   // Edición de nombre y apellido
@@ -189,7 +229,7 @@ export default function PerfilAdmin() {
     setUsuarios(prev => prev.map(u => u.usuario === usuario ? { ...u, nombre, apellido } : u));
   };
 
-  const handleEntregarPropina = (barbero: string) => {
+  const handleEntregarPropina = async (barbero: string) => {
     const monto = parseInt(montoEntrega[barbero] || '0', 10);
     if (isNaN(monto) || monto <= 0) {
       setError('Monto inválido');
@@ -199,9 +239,77 @@ export default function PerfilAdmin() {
       setError('No puedes entregar más de lo pendiente');
       return;
     }
-    setHistorialPropinas(prev => [...prev, { barbero, monto, fecha: new Date().toISOString() }]);
-    setMontoEntrega(prev => ({ ...prev, [barbero]: '' }));
-    setError('');
+    
+    try {
+      // Crear propina entregada en Supabase
+      const nuevaPropina = await propinaService.crearPropina({
+        barbero: barbero,
+        monto: monto,
+        fecha: new Date().toISOString().split('T')[0], // Solo la fecha
+        entregada: true
+      });
+      
+      if (nuevaPropina) {
+        setHistorialPropinas(prev => [...prev, { barbero, monto, fecha: new Date().toISOString() }]);
+        setMontoEntrega(prev => ({ ...prev, [barbero]: '' }));
+        setError('');
+      } else {
+        setError('Error al registrar la entrega de propina');
+      }
+    } catch (error) {
+      console.error('Error entregando propina:', error);
+      setError('Error de conexión. Intenta de nuevo.');
+    }
+  };
+
+  // Función para cambiar contraseña del administrador
+  const handleCambiarClave = async () => {
+    if (!nuevaClave || !confirmarClave || !claveActual) {
+      setMensajeClave('Todos los campos son obligatorios');
+      return;
+    }
+    
+    if (nuevaClave !== confirmarClave) {
+      setMensajeClave('Las contraseñas no coinciden');
+      return;
+    }
+    
+    if (nuevaClave.length < 4) {
+      setMensajeClave('La contraseña debe tener al menos 4 caracteres');
+      return;
+    }
+    
+    try {
+      // Verificar que la contraseña actual es correcta
+      const adminUser = await usuarioService.login('luis.paez', claveActual);
+      if (!adminUser) {
+        setMensajeClave('La contraseña actual es incorrecta');
+        return;
+      }
+      
+      // Actualizar la contraseña en Supabase
+      const actualizado = await usuarioService.actualizarUsuario(adminUser.id, {
+        clave: nuevaClave
+      });
+      
+      if (actualizado) {
+        setMensajeClave('Contraseña actualizada correctamente');
+        setClaveActual('');
+        setNuevaClave('');
+        setConfirmarClave('');
+        setMostrarCambioClave(false);
+        
+        // Actualizar el estado local
+        setUsuarios(prev => prev.map(u => 
+          u.usuario === 'luis.paez' ? { ...u, clave: nuevaClave } : u
+        ));
+      } else {
+        setMensajeClave('Error al actualizar la contraseña');
+      }
+    } catch (error) {
+      console.error('Error cambiando contraseña:', error);
+      setMensajeClave('Error de conexión. Intenta de nuevo.');
+    }
   };
 
   // Obtener datos del admin
@@ -212,7 +320,104 @@ export default function PerfilAdmin() {
     <div style={{ padding: 32 }}>
       <h2>Perfil del Administrador</h2>
       <h3 style={{ color: '#4C2E00', marginTop: 0 }}>{nombreAdmin}</h3>
-      <button onClick={() => { localStorage.clear(); window.location.reload(); }} style={{ background: '#b00', color: 'white', border: 'none', borderRadius: 6, padding: '10px 24px', fontWeight: 'bold', marginBottom: 24 }}>Borrar todo (pruebas)</button>
+      
+      {/* Sección de cambio de contraseña */}
+      <div style={{ background: 'var(--color-gris-claro)', padding: 24, borderRadius: 10, marginBottom: 24, color: 'black' }}>
+        <h3>Cambiar Contraseña</h3>
+        {!mostrarCambioClave ? (
+          <button 
+            onClick={() => setMostrarCambioClave(true)}
+            style={{ 
+              background: 'var(--color-marron-oscuro)', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 6, 
+              padding: '10px 20px', 
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            Cambiar mi contraseña
+          </button>
+        ) : (
+          <div style={{ maxWidth: 400 }}>
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="password"
+                placeholder="Contraseña actual"
+                value={claveActual}
+                onChange={e => setClaveActual(e.target.value)}
+                style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
+              />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="password"
+                placeholder="Nueva contraseña"
+                value={nuevaClave}
+                onChange={e => setNuevaClave(e.target.value)}
+                style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
+              />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="password"
+                placeholder="Confirmar nueva contraseña"
+                value={confirmarClave}
+                onChange={e => setConfirmarClave(e.target.value)}
+                style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
+              />
+            </div>
+            {mensajeClave && (
+              <div style={{ 
+                color: mensajeClave.includes('correctamente') ? 'green' : 'red', 
+                marginBottom: 12,
+                fontWeight: 'bold'
+              }}>
+                {mensajeClave}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button 
+                onClick={handleCambiarClave}
+                style={{ 
+                  background: 'var(--color-marron-oscuro)', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: 6, 
+                  padding: '8px 16px', 
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Actualizar contraseña
+              </button>
+              <button 
+                onClick={() => {
+                  setMostrarCambioClave(false);
+                  setClaveActual('');
+                  setNuevaClave('');
+                  setConfirmarClave('');
+                  setMensajeClave('');
+                }}
+                style={{ 
+                  background: '#666', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: 6, 
+                  padding: '8px 16px', 
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      
+
       <div style={{ background: 'var(--color-gris-claro)', padding: 24, borderRadius: 10, marginBottom: 32, color: 'black' }}>
         <h3>Estadísticas generales</h3>
         <p><b>Total ventas:</b> ${totalVentas}</p>

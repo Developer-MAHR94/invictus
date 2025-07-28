@@ -1,18 +1,27 @@
 import { useEffect, useState } from 'react';
-
-function loadUsuarios() {
-  try {
-    const data = localStorage.getItem('usuarios');
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
+import { usuarioService } from '../services/supabaseService';
 
 export default function Dashboard() {
-  const [usuarios, setUsuarios] = useState<Array<{usuario: string; nombre?: string; apellido?: string}>>(() => loadUsuarios());
-  // Este useEffect solo debe ejecutarse una vez al montar el componente para cargar los usuarios
-  useEffect(() => { setUsuarios(loadUsuarios()); }, []);
+  const [usuarios, setUsuarios] = useState<Array<{usuario: string; nombre?: string; apellido?: string}>>([]);
+  
+  // Cargar usuarios desde Supabase
+  useEffect(() => {
+    const loadUsuarios = async () => {
+      try {
+        const usuariosData = await usuarioService.getUsuarios();
+        const usuariosMapeados = usuariosData.map(u => ({
+          usuario: u.usuario,
+          nombre: u.nombre || undefined,
+          apellido: u.apellido || undefined
+        }));
+        setUsuarios(usuariosMapeados);
+      } catch (error) {
+        console.error('Error cargando usuarios:', error);
+      }
+    };
+    
+    loadUsuarios();
+  }, []);
   const user = usuarios.find(u => u.usuario === 'natali.gomez');
   const nombreCompleto = user ? `${user.nombre || ''} ${user.apellido || ''}`.trim() : 'Asistente';
   return (

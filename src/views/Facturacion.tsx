@@ -1,23 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import type { Producto, Factura, Servicio } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
-
-const BARBEROS_KEY = 'barberos';
-const barberosBase = [
-  'jose.torres',
-  'breiner.ferrer',
-  'edinson.vergara',
-];
-function loadBarberos() {
-  try {
-    const data = localStorage.getItem(BARBEROS_KEY);
-    return data ? JSON.parse(data) : barberosBase;
-  } catch {
-    return barberosBase;
-  }
-}
+import { barberoService } from '../services/supabaseService';
 
 function generarId() {
   return Math.random().toString(36).substring(2, 10);
@@ -179,7 +165,23 @@ export default function Facturacion() {
   const [transferenciaCierre, setTransferenciaCierre] = useState(0);
   const [errorCierre, setErrorCierre] = useState('');
   // const busquedaInputRef = useRef<HTMLInputElement>(null);
-  const barberos = loadBarberos();
+  const [barberos, setBarberos] = useState<string[]>([]);
+
+  // Cargar barberos desde Supabase
+  useEffect(() => {
+    const loadBarberos = async () => {
+      try {
+        const barberosData = await barberoService.getBarberos();
+        setBarberos(barberosData.map(b => b.usuario));
+      } catch (error) {
+        console.error('Error cargando barberos:', error);
+        // Fallback a barberos base si hay error
+        setBarberos(['jose.torres', 'breiner.ferrer', 'edinson.vergara']);
+      }
+    };
+    
+    loadBarberos();
+  }, []);
 
   // Filtrar productos por búsqueda, solo con cantidad > 0, coincidencia parcial e insensible a mayúsculas/minúsculas
   // const productosFiltrados = productos

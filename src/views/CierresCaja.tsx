@@ -1,28 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-const BARBEROS_KEY = 'barberos';
-const barberosBase = [
-  'jose.torres',
-  'breiner.ferrer',
-  'edinson.vergara',
-];
-function loadBarberos() {
-  try {
-    const data = localStorage.getItem(BARBEROS_KEY);
-    return data ? JSON.parse(data) : barberosBase;
-  } catch {
-    return barberosBase;
-  }
-}
+import { barberoService } from '../services/supabaseService';
 
 export default function CierresCaja() {
   const { facturas, cierres, agregarCierre } = useAppData();
   const { usuario } = useAuth();
   const [mensaje, setMensaje] = useState('');
+  const [barberos, setBarberos] = useState<string[]>([]);
+
+  // Cargar barberos desde Supabase
+  useEffect(() => {
+    const loadBarberos = async () => {
+      try {
+        const barberosData = await barberoService.getBarberos();
+        setBarberos(barberosData.map(b => b.usuario));
+      } catch (error) {
+        console.error('Error cargando barberos:', error);
+        // Fallback a barberos base si hay error
+        setBarberos(['jose.torres', 'breiner.ferrer', 'edinson.vergara']);
+      }
+    };
+    
+    loadBarberos();
+  }, []);
 
   if (usuario?.rol === 'asistente') {
     return (
@@ -73,7 +76,6 @@ export default function CierresCaja() {
     // Ganancia total admin
     const totalGananciaAdmin = totalGananciaServiciosAdmin + totalGananciaProductos;
     // Barberos
-    const barberos = loadBarberos();
     const gananciasBarberos = barberos.map((b: string) => {
       const servicios = facturasSemana.flatMap(f => f.servicios.filter(s => s.barbero === b));
       const cortes = servicios.length;
@@ -161,11 +163,7 @@ export default function CierresCaja() {
       fecha: semana,
       detalle: `Cierre semanal realizado por ${usuario?.usuario || 'usuario'}`,
     });
-    // Reiniciar facturas y cierres (excepto inventario)
-    localStorage.setItem('facturas', '[]');
-    localStorage.setItem('cierres', '[]');
-    setMensaje('Cierre semanal realizado, PDF generado y datos reiniciados (excepto inventario).');
-    setTimeout(() => window.location.reload(), 1000);
+    setMensaje('Cierre semanal realizado y PDF generado.');
   };
 
   return (
@@ -173,21 +171,7 @@ export default function CierresCaja() {
       <h2>Cierres de Caja</h2>
       {(usuario?.rol === 'admin' || usuario?.rol === 'asistente') && (
         <div style={{ background: 'var(--color-gris-claro)', color: 'black', padding: 24, borderRadius: 10, maxWidth: 500 }}>
-          {(() => {
-            // Cargar propinas pendientes
-            let propinasPendientes = {};
-            try {
-              propinasPendientes = JSON.parse(localStorage.getItem('propinasPendientes') || '{}');
-            } catch {
-              // Ignorar errores de parsing
-            }
-            if (Object.values(propinasPendientes).some(v => (v as number) < 0)) {
-              return <div style={{ color: 'red', fontWeight: 'bold', marginBottom: 12 }}>
-                ¡Atención! Hay propinas pendientes negativas. Corrige esto antes de hacer el cierre semanal.
-              </div>;
-            }
-            return null;
-          })()}
+
           <h3>Cierre Diario</h3>
           <button onClick={handleCierreDiario} style={{ background: 'var(--color-marron-oscuro)', color: 'white', border: 'none', borderRadius: 6, padding: '10px 24px', fontWeight: 'bold', fontSize: 16, marginBottom: 16 }}>Realizar cierre diario y descargar PDF</button>
           <h3>Cierre Semanal</h3>

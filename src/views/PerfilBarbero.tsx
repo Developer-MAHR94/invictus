@@ -1,33 +1,45 @@
 import { useState, useEffect } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
-
-function loadPropinasPendientes() {
-  try {
-    const data = localStorage.getItem('propinasPendientes');
-    return data ? JSON.parse(data) : {};
-  } catch {
-    return {};
-  }
-}
-function loadUsuarios() {
-  try {
-    const data = localStorage.getItem('usuarios');
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
+import { usuarioService, propinaService } from '../services/supabaseService';
 
 export default function PerfilBarbero() {
   const { facturas, cierres } = useAppData();
   const { usuario } = useAuth();
-  const [propinasPendientes, setPropinasPendientes] = useState<{[barbero: string]: number}>(() => loadPropinasPendientes());
-  const [usuarios, setUsuarios] = useState<Array<{usuario: string; nombre?: string; apellido?: string}>>(() => loadUsuarios());
+  const [propinasPendientes, setPropinasPendientes] = useState<{[barbero: string]: number}>({});
+  const [usuarios, setUsuarios] = useState<Array<{usuario: string; nombre?: string; apellido?: string}>>([]);
 
+  // Cargar datos desde Supabase
   useEffect(() => {
-    setPropinasPendientes(loadPropinasPendientes());
-    setUsuarios(loadUsuarios());
+    const loadData = async () => {
+      try {
+        const [usuariosData, propinasData] = await Promise.all([
+          usuarioService.getUsuarios(),
+          propinaService.getPropinas()
+        ]);
+        
+        // Mapear usuarios
+        const usuariosMapeados = usuariosData.map(u => ({
+          usuario: u.usuario,
+          nombre: u.nombre || undefined,
+          apellido: u.apellido || undefined
+        }));
+        setUsuarios(usuariosMapeados);
+        
+        // Calcular propinas pendientes
+        const propinasPendientesCalc: {[barbero: string]: number} = {};
+        propinasData.forEach(propina => {
+          if (!propina.entregada) {
+            propinasPendientesCalc[propina.barbero] = (propinasPendientesCalc[propina.barbero] || 0) + propina.monto;
+          }
+        });
+        setPropinasPendientes(propinasPendientesCalc);
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      }
+    };
+    
+    loadData();
   }, []);
 
   if (!usuario) return null;
