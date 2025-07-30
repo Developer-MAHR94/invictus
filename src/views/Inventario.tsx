@@ -113,14 +113,7 @@ export default function Inventario() {
     eliminarProducto(id);
   };
 
-  if (usuario?.rol === 'asistente') {
-    return (
-      <div style={{ padding: 32, color: 'var(--color-marron-oscuro)', textAlign: 'center' }}>
-        <h2>Acceso denegado</h2>
-        <p>No tienes permisos para ver el inventario.</p>
-      </div>
-    );
-  }
+  // La auxiliar ahora tiene acceso completo al inventario
 
   return (
     <div style={{ padding: 32 }}>
@@ -205,14 +198,17 @@ export default function Inventario() {
               <td style={{ color: 'black' }}>{p.cantidad}</td>
               <td style={{ color: 'black' }}>{new Date(p.fechaIngreso).toLocaleDateString()}</td>
               <td style={{ color: 'black' }}>${p.precioSalida - p.precioEntrada}</td>
-              <td>
-                {(usuario?.rol === 'admin' || usuario?.rol === 'asistente') && (
-                  <>
-                    <button onClick={() => iniciarEdicion(p)} style={{ background: 'var(--color-marron-oscuro)', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 'bold', marginRight: 8 }}>Editar</button>
-                    <button onClick={() => handleEliminar(p.id)} style={{ background: '#b00', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 'bold' }}>Eliminar</button>
-                  </>
-                )}
-              </td>
+                             <td>
+                 {usuario?.rol === 'admin' && (
+                   <>
+                     <button onClick={() => iniciarEdicion(p)} style={{ background: 'var(--color-marron-oscuro)', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 'bold', marginRight: 8 }}>Editar</button>
+                     <button onClick={() => handleEliminar(p.id)} style={{ background: '#b00', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 'bold' }}>Eliminar</button>
+                   </>
+                 )}
+                 {usuario?.rol === 'asistente' && (
+                   <button onClick={() => iniciarEdicion(p)} style={{ background: 'var(--color-marron-oscuro)', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 'bold' }}>Editar</button>
+                 )}
+               </td>
             </tr>
           ))}
         </tbody>

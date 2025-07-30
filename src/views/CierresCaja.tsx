@@ -27,14 +27,7 @@ export default function CierresCaja() {
     loadBarberos();
   }, []);
 
-  if (usuario?.rol === 'asistente') {
-    return (
-      <div style={{ padding: 32, color: 'var(--color-marron-oscuro)', textAlign: 'center' }}>
-        <h2>Acceso denegado</h2>
-        <p>No tienes permisos para ver los cierres de caja.</p>
-      </div>
-    );
-  }
+  // La auxiliar ahora tiene acceso completo a los cierres de caja
 
   // Cierre diario: solo recoge y guarda el dinero
   const handleCierreDiario = () => {
