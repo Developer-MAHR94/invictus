@@ -76,9 +76,9 @@ function EditarFacturaModal({ factura, productos, setFacturaEditando, editarFact
                   <option value="breiner.ferrer">breiner.ferrer</option>
                   <option value="edinson.vergara">edinson.vergara</option>
                 </select>
-                <input type="number" placeholder="Costo" value={s.costo} onChange={e => {
+                <input type="number" placeholder="Costo" value={s.costo === 0 ? '' : s.costo} onChange={e => {
                   const nuevos = [...factura.servicios];
-                  nuevos[idx].costo = Number(e.target.value);
+                  nuevos[idx].costo = e.target.value === '' ? 0 : Number(e.target.value);
                   setFacturaEditando({ ...factura, servicios: nuevos });
                 }} style={{ width: 70, padding: 4, borderRadius: 4, border: '1px solid #ccc', color: 'black' }} />
                 <input type="text" placeholder="Observación" value={s.observacion || ''} onChange={e => {
@@ -86,9 +86,9 @@ function EditarFacturaModal({ factura, productos, setFacturaEditando, editarFact
                   nuevos[idx].observacion = e.target.value;
                   setFacturaEditando({ ...factura, servicios: nuevos });
                 }} style={{ width: 120, padding: 4, borderRadius: 4, border: '1px solid #ccc', color: 'black' }} />
-                <input type="number" placeholder="Propina" value={s.propina || ''} onChange={e => {
+                <input type="number" placeholder="Propina" value={s.propina === 0 ? '' : s.propina} onChange={e => {
                   const nuevos = [...factura.servicios];
-                  let valor = Number(e.target.value);
+                  let valor = e.target.value === '' ? 0 : Number(e.target.value);
                   if (valor < 0) {
                     valor = 0;
                     setError('La propina no puede ser negativa');
@@ -357,9 +357,9 @@ export default function Facturacion() {
               <option value="">Barbero</option>
               {barberos.map((b: string) => <option key={b} value={b}>{b}</option>)}
             </select>
-            <input type="number" placeholder="Costo" value={costo} onChange={e => setCosto(Number(e.target.value))} style={{ width: 90, padding: 8, borderRadius: 6, border: '1px solid #ccc' }} />
+            <input type="number" placeholder="Costo" value={costo === 0 ? '' : costo} onChange={e => setCosto(e.target.value === '' ? 0 : Number(e.target.value))} style={{ width: 90, padding: 8, borderRadius: 6, border: '1px solid #ccc' }} />
             <input type="text" placeholder="Observación" value={observacion} onChange={e => setObservacion(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #ccc' }} />
-            <input type="number" placeholder="Propina" value={propina} onChange={e => setPropina(Number(e.target.value))} style={{ width: 90, padding: 8, borderRadius: 6, border: '1px solid #ccc' }} />
+            <input type="number" placeholder="Propina" value={propina === 0 ? '' : propina} onChange={e => setPropina(e.target.value === '' ? 0 : Number(e.target.value))} style={{ width: 90, padding: 8, borderRadius: 6, border: '1px solid #ccc' }} />
             <button type="button" onClick={agregarServicio} style={{ background: 'var(--color-marron-oscuro)', color: 'white', border: 'none', borderRadius: 6, padding: '8px 16px', fontWeight: 'bold' }}>Agregar servicio</button>
           </div>
           <ul>
@@ -443,17 +443,17 @@ export default function Facturacion() {
               </select>
             </div>
             {tipoPagoCierre === 'efectivo' && (
-              <input type="number" placeholder="Monto en efectivo" value={efectivoCierre} onChange={e => setEfectivoCierre(Number(e.target.value))} style={{ width: 160, padding: 8, borderRadius: 6, border: '1px solid #ccc', color: 'black', marginBottom: 8 }} />
+              <input type="number" placeholder="Monto en efectivo" value={efectivoCierre === 0 ? '' : efectivoCierre} onChange={e => setEfectivoCierre(e.target.value === '' ? 0 : Number(e.target.value))} style={{ width: 160, padding: 8, borderRadius: 6, border: '1px solid #ccc', color: 'black', marginBottom: 8 }} />
             )}
             {tipoPagoCierre === 'transferencia' && (
-              <input type="number" placeholder="Monto en transferencia" value={transferenciaCierre} onChange={e => setTransferenciaCierre(Number(e.target.value))} style={{ width: 160, padding: 8, borderRadius: 6, border: '1px solid #ccc', color: 'black', marginBottom: 8 }} />
+              <input type="number" placeholder="Monto en transferencia" value={transferenciaCierre === 0 ? '' : transferenciaCierre} onChange={e => setTransferenciaCierre(e.target.value === '' ? 0 : Number(e.target.value))} style={{ width: 160, padding: 8, borderRadius: 6, border: '1px solid #ccc', color: 'black', marginBottom: 8 }} />
             )}
             {tipoPagoCierre === 'combinado' && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
                 <label style={{ color: '#4C2E00', fontWeight: 'bold' }}>Efectivo:</label>
-                <input type="number" placeholder="Efectivo" value={efectivoCierre} onChange={e => setEfectivoCierre(Number(e.target.value))} style={{ width: 100, padding: 8, borderRadius: 6, border: '1px solid #ccc', color: 'black' }} />
+                <input type="number" placeholder="Efectivo" value={efectivoCierre === 0 ? '' : efectivoCierre} onChange={e => setEfectivoCierre(e.target.value === '' ? 0 : Number(e.target.value))} style={{ width: 100, padding: 8, borderRadius: 6, border: '1px solid #ccc', color: 'black' }} />
                 <label style={{ color: '#4C2E00', fontWeight: 'bold' }}>Transferencia:</label>
-                <input type="number" placeholder="Transferencia" value={transferenciaCierre} onChange={e => setTransferenciaCierre(Number(e.target.value))} style={{ width: 120, padding: 8, borderRadius: 6, border: '1px solid #ccc', color: 'black' }} />
+                <input type="number" placeholder="Transferencia" value={transferenciaCierre === 0 ? '' : transferenciaCierre} onChange={e => setTransferenciaCierre(e.target.value === '' ? 0 : Number(e.target.value))} style={{ width: 120, padding: 8, borderRadius: 6, border: '1px solid #ccc', color: 'black' }} />
               </div>
             )}
             {errorCierre && <div style={{ color: 'red', marginBottom: 8 }}>{errorCierre}</div>}

@@ -138,8 +138,8 @@ export default function Inventario() {
               <input
                 type="number"
                 placeholder="Precio de entrada"
-                value={precioEntrada}
-                onChange={e => setPrecioEntrada(Number(e.target.value))}
+                value={precioEntrada === 0 ? '' : precioEntrada}
+                onChange={e => setPrecioEntrada(e.target.value === '' ? 0 : Number(e.target.value))}
                 style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
                 disabled={usuario?.rol !== 'admin'}
               />
@@ -149,8 +149,8 @@ export default function Inventario() {
               <input
                 type="number"
                 placeholder="Precio de salida"
-                value={precioSalida}
-                onChange={e => setPrecioSalida(Number(e.target.value))}
+                value={precioSalida === 0 ? '' : precioSalida}
+                onChange={e => setPrecioSalida(e.target.value === '' ? 0 : Number(e.target.value))}
                 style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
               />
             </div>
