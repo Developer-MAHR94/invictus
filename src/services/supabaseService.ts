@@ -153,7 +153,17 @@ export const facturaService = {
   async crearFactura(factura: Omit<Factura, 'id' | 'created_at'>): Promise<Factura | null> {
     const { data, error } = await supabase
       .from('facturas')
-      .insert(factura)
+      .insert({
+        numero: factura.numero,
+        fecha: factura.fecha,
+        cliente: factura.cliente,
+        servicios: factura.servicios,
+        total: factura.total,
+        abierta: factura.abierta,
+        efectivo: factura.efectivo,
+        transferencia: factura.transferencia,
+        tipo_pago: factura.tipo_pago
+      })
       .select()
       .single()
     
@@ -168,7 +178,15 @@ export const facturaService = {
   async actualizarFactura(id: string, updates: Partial<Factura>): Promise<Factura | null> {
     const { data, error } = await supabase
       .from('facturas')
-      .update(updates)
+      .update({
+        cliente: updates.cliente,
+        servicios: updates.servicios,
+        total: updates.total,
+        abierta: updates.abierta,
+        efectivo: updates.efectivo,
+        transferencia: updates.transferencia,
+        tipo_pago: updates.tipo_pago
+      })
       .eq('id', id)
       .select()
       .single()

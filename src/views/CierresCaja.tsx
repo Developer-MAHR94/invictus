@@ -56,7 +56,7 @@ export default function CierresCaja() {
   };
 
   // Cierre semanal: paga a barberos, calcula totales y reinicia datos (excepto inventario)
-  const handleCierreSemanal = () => {
+  const handleCierreSemanal = async () => {
     const semana = new Date().toISOString().slice(0, 10);
     const facturasSemana = facturas.filter(f => !f.abierta); // Aquí puedes filtrar por semana real si lo deseas
     const totalEfectivo = facturasSemana.reduce((acc, f) => acc + f.efectivo, 0);
@@ -77,6 +77,23 @@ export default function CierresCaja() {
       return { barbero: b, cortes, ganado, propinas, total: ganado + propinas };
     });
     const totalEntregarBarberos = gananciasBarberos.reduce((acc: number, g: { total: number }) => acc + g.total, 0);
+    
+    // Marcar todas las propinas como entregadas para reiniciar valores
+    try {
+      const { propinaService } = await import('../services/supabaseService');
+      // Obtener todas las propinas pendientes
+      const propinasPendientes = await propinaService.getPropinas();
+      const propinasNoEntregadas = propinasPendientes.filter(p => !p.entregada);
+      
+      // Marcar todas como entregadas
+      for (const propina of propinasNoEntregadas) {
+        await propinaService.actualizarPropina(propina.id, { entregada: true });
+      }
+      
+      console.log(`Se marcaron ${propinasNoEntregadas.length} propinas como entregadas`);
+    } catch (error) {
+      console.error('Error marcando propinas como entregadas:', error);
+    }
     // PDF
     const doc = new jsPDF();
     doc.setFontSize(16);

@@ -13,9 +13,10 @@ function normalizar(str: string) {
   return str.trim().toLowerCase();
 }
 
-function EditarFacturaModal({ factura, productos, setFacturaEditando, editarFactura, generarId, setError }: {
+function EditarFacturaModal({ factura, productos, barberos, setFacturaEditando, editarFactura, generarId, setError }: {
   factura: Factura;
   productos: Producto[];
+  barberos: string[];
   setFacturaEditando: (f: Factura | null) => void;
   editarFactura: (f: Factura) => void;
   generarId: () => string;
@@ -72,9 +73,13 @@ function EditarFacturaModal({ factura, productos, setFacturaEditando, editarFact
                   setFacturaEditando({ ...factura, servicios: nuevos });
                 }} style={{ padding: 4, borderRadius: 4, border: '1px solid #ccc', color: 'black' }}>
                   <option value="">Barbero</option>
-                  <option value="jose.torres">jose.torres</option>
-                  <option value="breiner.ferrer">breiner.ferrer</option>
-                  <option value="edinson.vergara">edinson.vergara</option>
+                  {/* Mostrar el barbero actual aunque no esté en la lista */}
+                  {s.barbero && !barberos.includes(s.barbero) && (
+                    <option value={s.barbero} style={{ color: '#666', fontStyle: 'italic' }}>
+                      {s.barbero} (no disponible)
+                    </option>
+                  )}
+                  {barberos.map((b: string) => <option key={b} value={b}>{b}</option>)}
                 </select>
                 <input type="number" placeholder="Costo" value={s.costo === 0 ? '' : s.costo} onChange={e => {
                   const nuevos = [...factura.servicios];
@@ -423,7 +428,7 @@ export default function Facturacion() {
           ))}
         </tbody>
       </table>
-      {facturaEditando && <EditarFacturaModal factura={facturaEditando} productos={productos} setFacturaEditando={setFacturaEditando} editarFactura={editarFactura} generarId={generarId} setError={setError} />}
+      {facturaEditando && <EditarFacturaModal factura={facturaEditando} productos={productos} barberos={barberos} setFacturaEditando={setFacturaEditando} editarFactura={editarFactura} generarId={generarId} setError={setError} />}
       {facturaCerrando && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#fff', border: '1px solid #ccc', borderRadius: 8, padding: 24, minWidth: 320, boxShadow: '0 2px 16px rgba(0,0,0,0.25)' }}>

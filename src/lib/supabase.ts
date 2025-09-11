@@ -80,6 +80,9 @@ export interface Database {
           servicios: any
           total: number
           abierta: boolean
+          efectivo: number
+          transferencia: number
+          tipo_pago: string
           created_at: string
         }
         Insert: {
@@ -90,6 +93,9 @@ export interface Database {
           servicios: any
           total: number
           abierta: boolean
+          efectivo: number
+          transferencia: number
+          tipo_pago: string
           created_at?: string
         }
         Update: {
@@ -100,6 +106,9 @@ export interface Database {
           servicios?: any
           total?: number
           abierta?: boolean
+          efectivo?: number
+          transferencia?: number
+          tipo_pago?: string
           created_at?: string
         }
       }

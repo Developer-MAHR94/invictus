@@ -105,9 +105,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           cliente: f.cliente,
           productos: [], // Los productos se manejan por separado
           servicios: f.servicios || [],
-          tipoPago: 'efectivo' as const, // Valor por defecto
-          efectivo: f.total,
-          transferencia: 0,
+          tipoPago: (f.tipo_pago as 'efectivo' | 'transferencia' | 'combinado') || 'efectivo',
+          efectivo: f.efectivo || 0,
+          transferencia: f.transferencia || 0,
           abierta: f.abierta,
           fecha: f.fecha
         }));
@@ -204,7 +204,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         cliente: f.cliente,
         servicios: f.servicios,
         total: f.efectivo + f.transferencia,
-        abierta: f.abierta
+        abierta: f.abierta,
+        efectivo: f.efectivo,
+        transferencia: f.transferencia,
+        tipo_pago: f.tipoPago
       });
       
       if (nuevaFactura) {
@@ -213,9 +216,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           cliente: nuevaFactura.cliente,
           productos: [],
           servicios: nuevaFactura.servicios || [],
-          tipoPago: 'efectivo',
-          efectivo: nuevaFactura.total,
-          transferencia: 0,
+          tipoPago: f.tipoPago,
+          efectivo: f.efectivo,
+          transferencia: f.transferencia,
           abierta: nuevaFactura.abierta,
           fecha: nuevaFactura.fecha
         }]);
@@ -251,7 +254,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           id: facturaActualizada.id,
           cliente: facturaActualizada.cliente,
           servicios: facturaActualizada.servicios || [],
-          efectivo: facturaActualizada.total,
+          tipoPago: f.tipoPago,
+          efectivo: f.efectivo,
+          transferencia: f.transferencia,
           abierta: facturaActualizada.abierta
         } : fac));
       }
