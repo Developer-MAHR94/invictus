@@ -66,7 +66,7 @@ CREATE TABLE propinas (
 -- Insertar datos iniciales de usuarios
 INSERT INTO usuarios (usuario, clave, rol, nombre, apellido) VALUES
 ('luis.paez', '1234', 'admin', 'Luis', 'Paez'),
-('natali.gomez', '1002158638', 'asistente', 'Nataly', 'Gomez'),
+('natali.gomez', '1002158638', 'admin', 'Nataly', 'Gomez'),
 ('jose.torres', '1044215117', 'barbero', 'José', 'Torres'),
 ('breiner.ferrer', '1002185092', 'barbero', 'Breiner', 'Ferrer'),
 ('edinson.vergara', '1001914098', 'barbero', 'Edinson', 'Vergara');
